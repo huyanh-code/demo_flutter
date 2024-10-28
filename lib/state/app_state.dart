@@ -1,22 +1,28 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
+import 'package:namer_app/widgets/book_api.dart';
 
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
+  List<Books> _favorites = [];
 
-  void getNext() {
-    current = WordPair.random();
-    notifyListeners();
+  List<Books> get favorites => _favorites;
+
+  void addFavorite(Books book) {
+    if (!_favorites.contains(book)) {
+      _favorites.add(book);
+      notifyListeners(); // Cập nhật UI khi danh sách yêu thích thay đổi
+    }
   }
 
-  var favorites = <WordPair>[];
-
-  void toggleFavorite() {
-    if (favorites.contains(current)) {
-      favorites.remove(current);
-    } else {
-      favorites.add(current);
+  void removeFavorite(Books book) {
+    if (_favorites.contains(book)) {
+      _favorites.remove(book);
+      notifyListeners(); // Cập nhật UI khi danh sách yêu thích thay đổi
     }
-    notifyListeners();
+  }
+
+  bool isFavorite(Books book) {
+    return _favorites.contains(book); // Kiểm tra xem cuốn sách có phải là yêu thích không
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:namer_app/main.dart';
 import 'package:namer_app/service/book_provider.dart';
+import 'package:namer_app/views/tabs/bookDetailsScreen.dart';
+import 'package:namer_app/widgets/book_api.dart';
 import 'package:provider/provider.dart';
 
 class BookdetailsTab extends StatefulWidget {
@@ -11,11 +12,36 @@ class BookdetailsTab extends StatefulWidget {
 class _BookdetailsTab extends State<BookdetailsTab> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
+  
+  List<Books> filteredBooks = []; // Danh sách sách được lọc
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => context.read<BookProvider>().fetchBooks());
+    Future.microtask(() {
+      final bookProvider = context.read<BookProvider>();
+      bookProvider.fetchBooks().then((_) {
+        setState(() {
+          filteredBooks = bookProvider.books; // Gán toàn bộ sách vào filteredBooks
+        });
+      });
+    });
+  }
+
+  void _searchBooks() {
+    final bookProvider = context.read<BookProvider>();
+    final query = _searchController.text;
+    setState(() {
+      // Nếu truy vấn rỗng, hiển thị toàn bộ sách
+      if (query.isEmpty) {
+        filteredBooks = bookProvider.books;
+      } else {
+        // Lọc sách dựa trên truy vấn
+        filteredBooks = bookProvider.books
+            .where((book) => book.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
   }
 
   @override
@@ -31,9 +57,7 @@ class _BookdetailsTab extends State<BookdetailsTab> {
                 _isSearching = !_isSearching;
                 if (!_isSearching) {
                   _searchController.clear();
-                  context
-                      .read<BookProvider>()
-                      .searchBooks(''); // Reset kết quả tìm kiếm
+                  filteredBooks = context.read<BookProvider>().books; // Reset filteredBooks khi không tìm kiếm
                 }
               });
             },
@@ -51,18 +75,9 @@ class _BookdetailsTab extends State<BookdetailsTab> {
                       border: OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: Icon(Icons.search),
-                        onPressed: () {
-                          // Gọi phương thức tìm kiếm khi nhấn nút tìm kiếm
-                          context
-                              .read<BookProvider>()
-                              .searchBooks(_searchController.text);
-                        },
+                        onPressed: _searchBooks, // Gọi phương thức tìm kiếm khi nhấn nút
                       ),
                     ),
-                    onSubmitted: (value) {
-                      // Gọi phương thức tìm kiếm khi nhấn Enter
-                      context.read<BookProvider>().searchBooks(value);
-                    },
                   ),
                 ),
               )
@@ -90,7 +105,7 @@ class _BookdetailsTab extends State<BookdetailsTab> {
             return Center(child: CircularProgressIndicator());
           }
 
-          if (bookProvider.books.isEmpty) {
+          if (filteredBooks.isEmpty) {
             return Center(
               child: Text(
                 'Không tìm thấy kết quả nào.',
@@ -102,158 +117,96 @@ class _BookdetailsTab extends State<BookdetailsTab> {
             );
           }
 
-          return bookProvider.books.isEmpty
-              ? Center(child: Text('Không có dữ liệu'))
-              : ListView.builder(
-                  itemCount: (bookProvider.books.length / 2)
-                      .ceil(), // Làm tròn lên để tính số hàng
-                  itemBuilder: (context, rowIndex) {
-                    final firstBookIndex = rowIndex *
-                        2; // Tính chỉ số cuốn sách đầu tiên trong hàng
-                    final secondBookIndex = firstBookIndex +
-                        1; // Tính chỉ số cuốn sách thứ hai trong hàng
-
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        // Card đầu tiên
-                        if (firstBookIndex <
-                            bookProvider.books.length) // Kiểm tra chỉ số hợp lệ
-                          Expanded(
-                            child: Card(
-                              elevation: 4,
-                              margin: EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Căn chỉnh ảnh cho vừa với Card
-                                  Container(
-                                    height: 150, // Chiều cao cố định cho ảnh
-                                    width: double
-                                        .infinity, // Để ảnh chiếm toàn bộ chiều rộng của Card
-                                    child: Image.network(
-                                      bookProvider
-                                          .books[firstBookIndex].coverImgUrl,
-                                      fit: BoxFit
-                                          .cover, // Căn chỉnh ảnh cho đầy đủ không gian
-                                    ),
-                                  ),
-
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          bookProvider
-                                              .books[firstBookIndex].name,
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          bookProvider
-                                              .books[firstBookIndex].details,
-                                          style: TextStyle(fontSize: 14),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          'Published on: ${bookProvider.books[firstBookIndex].publishDate.toLocal().toString().split(' ')[0]}',
-                                          style: TextStyle(fontSize: 11),
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          'Price: \$${bookProvider.books[firstBookIndex].price}',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.red,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+          return GridView.builder(
+            padding: EdgeInsets.all(8),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.7,
+            ),
+            itemCount: filteredBooks.length,
+            itemBuilder: (context, index) {
+              final book = filteredBooks[index];
+              return GestureDetector(
+                onTap: () {
+                  // Điều hướng đến màn hình BookDetailScreen khi nhấn vào Card
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BookDetailScreen(book: book),
+                    ),
+                  );
+                },
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 160,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(8)),
+                        ),
+                        child: ClipRRect(
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(8)),
+                          child: Image.network(
+                            book.coverImgUrl,
+                            fit: BoxFit.cover,
                           ),
-
-                        // Card thứ hai
-                        if (secondBookIndex <
-                            bookProvider.books.length) // Kiểm tra chỉ số hợp lệ
-                          Expanded(
-                            child: Card(
-                              elevation: 4,
-                              margin: EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Image.network(
-                                    bookProvider
-                                        .books[secondBookIndex].coverImgUrl,
-                                    width: double.infinity,
-                                    height:
-                                        150, // Điều chỉnh chiều cao hình ảnh
-                                    fit: BoxFit.cover,
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          bookProvider
-                                              .books[secondBookIndex].name,
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          bookProvider
-                                              .books[secondBookIndex].details,
-                                          style: TextStyle(fontSize: 14),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          'Published on: ${bookProvider.books[secondBookIndex].publishDate.toLocal().toString().split(' ')[0]}',
-                                          style: TextStyle(fontSize: 11),
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text(
-                                          'Price: \$${bookProvider.books[secondBookIndex].price}',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.red,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                book.name,
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
+                              SizedBox(height: 4),
+                              Text(
+                                book.details,
+                                style: TextStyle(fontSize: 14),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Published on: ${book.publishDate.toLocal().toString().split(' ')[0]}',
+                                style: TextStyle(fontSize: 11),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Price: \$${book.price}',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ],
                           ),
-                      ],
-                    );
-                  },
-                );
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
         },
       ),
     );

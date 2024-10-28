@@ -28,7 +28,7 @@ class GeneratorTab extends StatelessWidget {
                 children: [
                   ElevatedButton.icon(
                     onPressed: () {
-                      appState.toggleFavorite();
+                      // appState.toggleFavorite();
                     },
                     icon: Icon(icon),
                     label: Text('Like'),
@@ -36,7 +36,7 @@ class GeneratorTab extends StatelessWidget {
                   SizedBox(width: 10),
                   ElevatedButton(
                     onPressed: () {
-                      appState.getNext();
+                      // appState.getNext();
                     },
                     child: Text('Next'),
                   ),
