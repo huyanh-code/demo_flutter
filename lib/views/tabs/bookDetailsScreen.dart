@@ -1,30 +1,95 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:namer_app/service/book_provider.dart';
 import 'package:namer_app/state/app_state.dart';
 import 'package:namer_app/widgets/book_api.dart';
-import 'package:provider/provider.dart'; // Import mô hình Books
+import 'package:provider/provider.dart';
 
 class BookDetailScreen extends StatelessWidget {
   final Books book; // Nhận thông tin cuốn sách từ BookDetailsTab
-
   BookDetailScreen({required this.book});
-
-  
 
   @override
   Widget build(BuildContext context) {
+    // final bookProvider = context.read<BookProvider>();
+    // final myAppState = context.read<MyAppState>();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(book.name),
         actions: [
-          IconButton(
-            icon: Icon(Icons.favorite_border), // Icon trái tim
-            onPressed: () {
-              Provider.of<MyAppState>(context, listen: false).addFavorite(book);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${book.name} đã được thêm vào yêu thích!')),
+          Consumer2<BookProvider, MyAppState>(
+            builder: (context, bookProvider, myAppState, child) {
+              final isFavorite = bookProvider.isFavorite(book);
+              return IconButton(
+                icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
+                color: isFavorite ? Colors.red[900] : null,
+                onPressed: () {
+                  bookProvider.toggleFavoriteStatus(book);
+                  if (isFavorite) {
+                    myAppState.removeFavorite(book);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(
+                              '${book.name} đã bị xóa khỏi danh sách yêu thích!')
+                      ),
+                    );
+                  } else {
+                    myAppState.addFavorite(book);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(
+                              '${book.name} đã được thêm vào danh sách yêu thích!')
+                      ),
+                    );
+                  }
+                  // Cập nhật trạng thái trong BookProvider
+                  bookProvider.setFavoriteStatus(book, !isFavorite);
+                },
               );
             },
           ),
+
+          // Consumer<BookProvider>(builder: (context, bookProvider, child) {
+          //   final isFavorite = bookProvider.isFavorite(book);
+          //   return IconButton(
+          //     icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
+          //     color: isFavorite ? Colors.red[900] : null,
+          //     onPressed: () {
+          //       if (!isFavorite) {
+          //         bookProvider.toggleFavorite(book);
+          //         ScaffoldMessenger.of(context).showSnackBar(
+          //           SnackBar(content: Text('${book.name} đã được thêm vào danh sách yêu thích!')),
+          //         );
+          //       } else {
+          //         ScaffoldMessenger.of(context).showSnackBar(
+          //           SnackBar(content: Text('${book.name} đã tồn tại trong danh sách yêu thích!')),
+          //         );
+          //       }
+          //     },
+          //   );
+          // }),
+
+          // Builder(builder: (context) {
+          //   final myAppState = context.read<MyAppState>();
+          //   final isFavourite = myAppState.isFavorite(book);
+          //   return IconButton(
+          //     icon: Icon(isFavourite ? Icons.favorite : Icons.favorite_border),
+          //     color: isFavourite ? Colors.red[900] : null,
+          //     onPressed: () {
+          //       myAppState.toggleFavorite(book);
+          //       ScaffoldMessenger.of(context).showSnackBar(
+          //         SnackBar(
+          //           content: Text(
+          //             isFavourite
+          //                 ? '${book.name} đã xóa khỏi danh sách yêu thích!'
+          //                 : '${book.name} đã thêm vào danh sách yêu thích!',
+          //           ),
+          //         ),
+          //       );
+          //     },
+          //   );
+          // }),
           IconButton(
             icon: Icon(Icons.shopping_cart), // Icon giỏ hàng
             onPressed: () {
@@ -70,8 +135,8 @@ class BookDetailScreen extends StatelessWidget {
               SizedBox(height: 8),
               // Hiển thị ngày xuất bản
               Text(
-                'Published on: ${book.publishDate.toLocal().toString().split(' ')[0]}',
-                style: TextStyle(fontSize: 14),
+                'Published on: ${DateFormat('dd/MM/yyyy').format(book.publishDate)}',
+                style: TextStyle(fontSize: 11),
               ),
               SizedBox(height: 8),
               // Hiển thị giá

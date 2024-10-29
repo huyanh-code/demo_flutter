@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:namer_app/service/book_provider.dart';
 import 'package:namer_app/views/tabs/bookDetailsScreen.dart';
 import 'package:namer_app/widgets/book_api.dart';
@@ -185,12 +186,12 @@ class _BookdetailsTab extends State<BookdetailsTab> {
                               ),
                               SizedBox(height: 4),
                               Text(
-                                'Published on: ${book.publishDate.toLocal().toString().split(' ')[0]}',
+                                'Published on: ${DateFormat('dd/MM/yyyy').format(book.publishDate)}',
                                 style: TextStyle(fontSize: 11),
                               ),
                               SizedBox(height: 4),
                               Text(
-                                'Price: \$${book.price}',
+                                '\$${book.price}',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,

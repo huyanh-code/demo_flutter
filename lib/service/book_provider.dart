@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:namer_app/service/book_service.dart';
 import 'package:namer_app/widgets/book_api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum BookState {
   initial,
@@ -16,6 +19,7 @@ class BookProvider with ChangeNotifier {
   final BookService _booksService = BookService();
   List<Books> _books = [];
   List<Books> _searchedBooks = [];
+  Map<int?, bool> _favoriteStatus = {};
 
   List<Books> get books => _books;
   List<Books> get searchedBooks => _searchedBooks;
@@ -25,6 +29,8 @@ class BookProvider with ChangeNotifier {
 
   String? _errorMessage = '';
   String? get errorMessage => _errorMessage;
+
+
 
   void _setState({required BookState newState, String? error = ''}) {
     logger.fine('State changed: '
@@ -84,7 +90,7 @@ class BookProvider with ChangeNotifier {
     }
   }
 
-   Future<void> searchBooks(String query) async {
+  Future<void> searchBooks(String query) async {
     if (query.isEmpty) {
       // Nếu truy vấn trống, reset danh sách tìm kiếm
       _searchedBooks = [];
@@ -104,4 +110,18 @@ class BookProvider with ChangeNotifier {
     }
     notifyListeners();
   }
+
+  bool isFavorite(Books book) {
+    return _favoriteStatus[book.id] ?? false;
+  }
+
+  void toggleFavoriteStatus(Books book) {
+    _favoriteStatus[book.id] = !isFavorite(book);
+    notifyListeners();
+  }
+  void setFavoriteStatus(Books book, bool status) {
+    _favoriteStatus[book.id] = status;
+    notifyListeners();
+  }
+
 }

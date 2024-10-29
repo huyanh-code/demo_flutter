@@ -20,20 +20,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Namer App',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: kDefaultColor),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => MyAppState()),
+        ChangeNotifierProvider(create: (_) => BookProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Namer App',
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(seedColor: kDefaultColor),
+        ),
+        home: HomeView(),
+        debugShowCheckedModeBanner: false,
       ),
-      home: MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => MyAppState()),
-          ChangeNotifierProvider(create: (_) => BookProvider()),
-        ],
-        child: HomeView(),
-      ),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
